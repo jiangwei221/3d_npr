@@ -37,7 +37,6 @@ class Selector
         num_slices = 10;
         num_max_line = 50;
         num_max_pts = 50;
-
     }    
 
     std::vector<std::vector<dvec3>> selectPoints(const pcl::PointCloud<pcl::PointXYZRGBNormal> &in_cloud, int num_curves)
