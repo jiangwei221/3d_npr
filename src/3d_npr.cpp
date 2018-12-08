@@ -23,7 +23,7 @@ using namespace glm;
 
 int main(int argc, char **argv)
 {
-    if (argc < 2)
+    if (argc < 3)
     {
         pcl::console::print_error("argv: objfile_path pcdfile_path sample_density optioanl_normal_flag optional_flip_flag\n", argv[0]);
         return 1;
@@ -45,9 +45,9 @@ int main(int argc, char **argv)
 
     //set random seed
     srand(time(NULL));
-
+    std::cout << "initializing sampler" << std::endl;
     Sampler sampler = Sampler(argv[1], normal_flag, flip, false);
-
+    std::cout << "sampling point cloud" << std::endl;
     pcl::PointCloud<pcl::PointXYZRGBNormal> out_cloud = sampler.getPointCloud(sample_density);
 
     pcl::io::savePCDFileASCII(argv[2], out_cloud);

@@ -46,6 +46,7 @@ void draw()
   //for(int i=0; i<10; i++ )
   {
     curves.get(i).draw();
+    //curves.get(i).draw();
     curves.get(i).draw_mesh();
   }
   pushMatrix();

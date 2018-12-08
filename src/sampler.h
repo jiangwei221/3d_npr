@@ -34,9 +34,12 @@ class Sampler
         // bool res = loadOBJ(path, tris, uvs, normals);
         //convert the loaded data to dvec3
         // Initialize Loader
+        std::cout << "loading mesh" << std::endl;
 	    objl::Loader Loader;
         bool res = Loader.LoadFile(path);
         objl::Mesh curMesh = Loader.LoadedMeshes[0];
+        std::cout << "mesh loaded" << std::endl;
+        std::cout << "converting to vector" << std::endl;
         for (int i = 0; i < curMesh.Indices.size(); i += 3)
         {
             for (int j=0; j<3; j++)
@@ -56,7 +59,7 @@ class Sampler
 
         std::cout << "read: " << (res ? "sucessful" : "fail") << std::endl;
 
-        num_tris = int(tris.size() / 3);
+        num_tris = int(this->tris.size() / 3);
         weights = new double[num_tris];
         area_sum = 0;
         for (int i = 0; i < num_tris; i++)
@@ -73,7 +76,10 @@ class Sampler
         this->flip_flag = flip_flag;
         this->normal_flag = normal_flag && normals.size() > 0;
         this->color_flag = color_flag;
-        std::cout << "modela surface area: " << area_sum << std::endl;
+        std::cout << "modela surface area: " << this->area_sum << std::endl;
+        std::cout << "num of vertices: " << this->tris.size() << std::endl;
+        std::cout << "num of normals: " << this->normals.size() << std::endl;
+        std::cout << "num of uvs: " << this->uvs.size() << std::endl;
     }
 
     //get the area of a triangle
