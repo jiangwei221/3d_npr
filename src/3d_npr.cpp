@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/string_cast.hpp"
 #include "OBJ_Loader.h"
+#include "ppm_loader.h"
 #include "sampler.h"
 #include "bezier.h"
 #include "fitter.h"
@@ -47,12 +48,17 @@ int main(int argc, char **argv)
     srand(time(NULL));
     std::cout << "initializing sampler" << std::endl;
     Sampler sampler = Sampler(argv[1], normal_flag, flip, false);
+    std::cout << "loading texture" << std::endl;
+    Image texture = readPPM("../models/bunny.ppm");
+    std::cout << "w: " <<  texture.w << ", h: " << texture.h << std::endl;
     std::cout << "sampling point cloud" << std::endl;
-    pcl::PointCloud<pcl::PointXYZRGBNormal> out_cloud = sampler.getPointCloud(sample_density);
+
+    pcl::PointCloud<pcl::PointXYZRGBNormal> out_cloud = sampler.getPointCloud(sample_density, &texture);
 
     pcl::io::savePCDFileASCII(argv[2], out_cloud);
     std::cerr << "saved " << out_cloud.points.size() << " data points to " << argv[2] << "." << std::endl;
 
+    /*
     Selector test_selector = Selector();
     Fitter test_fitter = Fitter();
     // std::vector<dvec3> pts = test_selector.copyPoints(out_cloud);
@@ -101,6 +107,7 @@ int main(int argc, char **argv)
 
     Writer test_writer = Writer();
     test_writer.writeBezierToCSV("../output/test.txt", result);
+    */
     return 0;
 }
 

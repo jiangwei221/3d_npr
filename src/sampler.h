@@ -2,7 +2,7 @@
 
 // OBJ_Loader - .obj Loader
 #include "OBJ_Loader.h"
-
+#include "ppm_loader.h"
 #include <iostream>
 #include "glm/vec3.hpp"
 #include "glm/glm.hpp"
@@ -77,26 +77,26 @@ class Sampler
         this->normal_flag = normal_flag && normals.size() > 0;
         this->color_flag = color_flag;
         std::cout << "modela surface area: " << this->area_sum << std::endl;
-        std::cout << "num of vertices: " << this->tris.size() << std::endl;
-        std::cout << "num of normals: " << this->normals.size() << std::endl;
-        std::cout << "num of uvs: " << this->uvs.size() << std::endl;
+        // std::cout << "num of vertices: " << this->tris.size() << std::endl;
+        // std::cout << "num of normals: " << this->normals.size() << std::endl;
+        // std::cout << "num of uvs: " << this->uvs.size() << std::endl;
     }
 
     //get the area of a triangle
     double getTriArea(const dvec3 &a, const dvec3 &b, const dvec3 &c)
     {
-        double e0 = distance(a, b);
-        double e1 = distance(b, c);
-        double e2 = distance(c, a);
-        double s = (e0 + e1 + e2) / 2;
-        double area = std::sqrt(s * (s - e0) * (s - e1) * (s - e2));
+        double e0 = abs(distance(a, b));
+        double e1 = abs(distance(b, c));
+        double e2 = abs(distance(c, a));
+        double s = (e0 + e1 + e2) / 2.0;
+        double area = sqrt(s * (s - e0) * (s - e1) * (s - e2));
         // if(area > 0.001)
         //     std::cout<<"area: "<<area<<std::endl;
         return area;
     }
 
     //sample the mesh to point cloud
-    pcl::PointCloud<pcl::PointXYZRGBNormal> getPointCloud(int sample_density)
+    pcl::PointCloud<pcl::PointXYZRGBNormal> getPointCloud(int sample_density, Image *texture)
     {
         int num_samples = int(sample_density * area_sum + 0.5);
         pcl::PointCloud<pcl::PointXYZRGBNormal> cloud;
@@ -126,15 +126,42 @@ class Sampler
             // std::cout<<"tri_index: "<<tri_index<<", temp: "<<temp<<std::endl;
             // std::cout<<"******"<<std::endl;
             //for a random tri, randomly select a point
+            //hard coded flag
+            bool texture_flag = true;
             if (normal_flag)
             {
                 //interpolate the normal
                 dvec3 pt_n;
-                dvec3 pt = getRandomPtOnTri(tris[tri_index * 3], tris[tri_index * 3 + 1], tris[tri_index * 3 + 2], normals[tri_index * 3], normals[tri_index * 3 + 1], normals[tri_index * 3 + 2], pt_n);
+                dvec2 pt_uv;
+                // dvec3 pt = getRandomPtOnTri(tris[tri_index * 3], tris[tri_index * 3 + 1], tris[tri_index * 3 + 2], normals[tri_index * 3], normals[tri_index * 3 + 1], normals[tri_index * 3 + 2], pt_n);
+                dvec3 pt = getRandomPtOnTri(tris[tri_index * 3], tris[tri_index * 3 + 1], tris[tri_index * 3 + 2], 
+                normals[tri_index * 3], normals[tri_index * 3 + 1], normals[tri_index * 3 + 2],
+                uvs[tri_index * 3], uvs[tri_index * 3 + 1], uvs[tri_index * 3 + 2], 
+                pt_n, pt_uv);
                 //write to cloud
-                cloud.points[i].r = 100;
-                cloud.points[i].g = 100;
-                cloud.points[i].b = 100;
+                if (texture)
+                {
+                    if(pt_uv.y > 1 || pt_uv.y < 0 || pt_uv.x > 1 || pt_uv.x < 0)
+                    {
+                        std::cout<< (pt_uv.x) <<  (pt_uv.y) << std::endl;
+                        while(1)
+                            ;
+                    }
+                    // int text_index = clamp(int(((1.0-pt_uv.y) * 1023) * 1024 + (pt_uv.x) * 1024), 0, 1024*1024-1);
+                    // std::cout<< (pt_uv.y) <<"  "<<  (pt_uv.x) << std::endl;
+                    // std::cout<< int(pt_uv.y * 1023) <<"  "<<  int(pt_uv.x * 1024) << std::endl;
+                    int text_index = int((1.0-pt_uv.y) * 1023) * 1024 + int(pt_uv.x * 1024);
+                    Image::Rgb color = texture->pixels[text_index];
+                    cloud.points[i].r = color.r * 255;
+                    cloud.points[i].g = color.g * 255;
+                    cloud.points[i].b = color.b * 255;
+                }
+                else
+                {
+                    cloud.points[i].r = 100;
+                    cloud.points[i].g = 100;
+                    cloud.points[i].b = 100;
+                }
                 cloud.points[i].x = pt.x;
                 cloud.points[i].y = pt.y;
                 cloud.points[i].z = pt.z;
@@ -154,6 +181,113 @@ class Sampler
             }
         }
         return cloud;
+    }
+
+    //
+    dvec3 getRandomPtOnTri(const dvec3 &a, const dvec3 &b, const dvec3 &c,
+                          const dvec3 &a_n, const dvec3 &b_n, const dvec3 &c_n,
+                          const dvec2 &a_uv, const dvec2 &b_uv, const dvec2 &c_uv,
+                          dvec3 &normal, dvec2 &uv)
+    {
+        double tarea = double(getTriArea(a, b, c));
+        double r0 = ((double)std::rand() / (RAND_MAX));
+        double r1 = ((double)std::rand() / (RAND_MAX));
+        dvec3 e0 = b - a;
+        dvec3 e1 = c - a;
+        dvec3 pt = a + r0 * e0 + r1 * e1;
+        //is pt in abc?
+        //http://blackpawn.com/texts/pointinpoly/
+        //if not r0=1-r0, r1=1-r1
+        //calculate the barycentric coord
+        //interpolate normal
+        dvec3 e2 = pt - a;
+        double dot00 = dot(e0, e0);
+        double dot01 = dot(e0, e1);
+        double dot02 = dot(e0, e2);
+        double dot11 = dot(e1, e1);
+        double dot12 = dot(e1, e2);
+        double invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+        double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+        // std::cout<<getTriArea(a,b,c)<<std::endl;
+        if ((u >= -0.00001) && (v >= -0.00001) && (u + v <= 1))
+        {
+            double area0 = double(getTriArea(b, c, pt));
+            double area1 = double(getTriArea(c, a, pt));
+            double area2 = double(getTriArea(a, b, pt));
+            double w0 = area0 / tarea;
+            double w1 = area1 / tarea;
+            double w2 = area2 / tarea;
+            dvec3 pt_n = w0 * a_n + w1 * b_n + w2 * c_n;
+            dvec2 pt_uv = w0 * a_uv + w1 * b_uv + w2 * c_uv;
+            if (flip_flag)
+                pt_n = -pt_n;
+            normal = normalize(pt_n);
+            uv = pt_uv;
+            // std::cout<< "**if**" <<std::endl;
+            // std::cout<<glm::to_string(a)<<glm::to_string(b)<<glm::to_string(c)<<std::endl;
+            // std::cout<<glm::to_string(pt)<<std::endl;
+            // std::cout<< (area0) <<  (area1) <<  (area2) <<std::endl;
+            // std::cout<< area0 + area1 + area2 <<std::endl;
+            // std::cout<< (w0) <<  (w1) <<  (w2) <<std::endl;
+            // std::cout<< (pt_uv.x) <<  (pt_uv.y) <<std::endl;
+            // std::cout<< "*****" <<std::endl;
+            return pt;
+        }
+        else
+        {
+            r0 = 1.0 - r0;
+            r1 = 1.0 - r1;
+            pt = a + r0 * e0 + r1 * e1;
+            e2 = pt - a;
+            dot00 = dot(e0, e0);
+            dot01 = dot(e0, e1);
+            dot02 = dot(e0, e2);
+            dot11 = dot(e1, e1);
+            dot12 = dot(e1, e2);
+            invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            if ((u >= -0.00001) && (v >= -0.00001) && (u + v <= 1))
+            {
+                double area0 = double(getTriArea(b, c, pt));
+                double area1 = double(getTriArea(c, a, pt));
+                double area2 = double(getTriArea(a, b, pt));
+                double w0 = area0 / tarea;
+                double w1 = area1 / tarea;
+                double w2 = area2 / tarea;
+                dvec3 pt_n = w0 * a_n + w1 * b_n + w2 * c_n;
+                dvec2 pt_uv = w0 * a_uv + w1 * b_uv + w2 * c_uv;
+                if (flip_flag)
+                    pt_n = -pt_n;
+                normal = normalize(pt_n);
+                uv = pt_uv;
+                // uv = dvec2(0,0);
+                // std::cout<< "**else**" <<std::endl;
+                // std::cout<<glm::to_string(a)<<glm::to_string(b)<<glm::to_string(c)<<std::endl;
+                // std::cout<<glm::to_string(pt)<<std::endl;
+                // std::cout<< (area0) <<  (area1) <<  (area2) <<std::endl;
+                // std::cout<< area0 + area1 + area2 <<std::endl;
+                // std::cout<< (w0) <<  (w1) <<  (w2) <<std::endl;
+                // std::cout<< (pt_uv.x) <<  (pt_uv.y) <<std::endl;
+                // std::cout<< "*****" <<std::endl;
+                return pt;
+            }
+            else
+            {
+                //should never be executed
+                std::cout << "tri area " << tarea << std::endl;
+                std::cout << "u: " << u << ", v: " << v << std::endl;
+                std::cout << "r0: " << r0 << ", r1: " << r1 << std::endl;
+                std::cout << "pt: " << to_string(pt) << std::endl;
+                std::cout << "a: " << to_string(a) << ", b: " << to_string(b) << ", c: " << to_string(c) << std::endl;
+                std::cout << "wrong implementation" << std::endl;
+                while (true)
+                {
+                    ;
+                }
+            }
+        }
     }
 
     //pick a random point on the triangle, and interpolate the normal
