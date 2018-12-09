@@ -11,3 +11,9 @@ Point cloud with texture, sampled from mesh.
 Generated mesh
 
 ![bunny_npr](https://raw.githubusercontent.com/jiangwei221/3d_npr/master/pics/bunny_npr.png)
+
+
+
+### Workflow
+
+![workflow](https://raw.githubusercontent.com/jiangwei221/3d_npr/master/pics/workflow.png)
