@@ -1,4 +1,4 @@
-#Non-photorealistic rendering with mesh vectorization
+# Non-photorealistic rendering with mesh vectorization
 
 ### show case
 
