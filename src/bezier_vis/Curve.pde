@@ -1,18 +1,39 @@
-float scale_fac = 100;
+float scale_fac = 500;
 class Curve
 {
   ArrayList<PVector> control_pts;
+  ArrayList<PVector> color_list;
   ArrayList<PVector> v_list;
   ArrayList<PVector> f_list;//every 3 is a face, it is NOT index
   PVector colors;
+  
   Curve(String data[])
   {
     control_pts = new ArrayList<PVector>();
+    color_list = new ArrayList<PVector>();
     v_list = new ArrayList<PVector>();
     f_list = new ArrayList<PVector>();
     for(int i=0; i<data.length; i=i+3)
     {
       control_pts.add(new PVector(Float.parseFloat(data[i]), Float.parseFloat(data[i+1]), Float.parseFloat(data[i+2])).mult(scale_fac));
+    }
+    colors = new PVector(random(0,255),random(0,255),random(0,255));
+    generate_bz_mesh();
+  }
+  
+  Curve(String data[], String in_colors[])
+  {
+    control_pts = new ArrayList<PVector>();
+    color_list = new ArrayList<PVector>();
+    v_list = new ArrayList<PVector>();
+    f_list = new ArrayList<PVector>();
+    for(int i=0; i<data.length; i=i+3)
+    {
+      control_pts.add(new PVector(Float.parseFloat(data[i]), Float.parseFloat(data[i+1]), Float.parseFloat(data[i+2])).mult(scale_fac));
+    }
+    for(int i=0; i<in_colors.length; i=i+3)
+    {
+      color_list.add(new PVector(Float.parseFloat(in_colors[i]), Float.parseFloat(in_colors[i+1]), Float.parseFloat(in_colors[i+2])));
     }
     colors = new PVector(random(0,255),random(0,255),random(0,255));
     generate_bz_mesh();
@@ -67,12 +88,20 @@ class Curve
       }
     }
     //now, we have all the intermedia points
+    //principal normal direction
+    PVector pre_direction = new PVector(0,0,0);
     for(int i=1; i<=pt_list.size()-2; i++)
     {
       PVector pre = pt_list.get(i-1);
       PVector cur = pt_list.get(i);
       PVector next = pt_list.get(i+1);
       PVector norm = PVector.sub(cur, pre).cross(PVector.sub(next, cur));
+      float flip_flag = PVector.dot(pre_direction, norm);
+      if(flip_flag < 0)
+      {
+        println("flip normal");
+        norm.mult(-1);
+      }
       norm.normalize();
       norm.mult(3);
       if(i==1)
@@ -90,23 +119,24 @@ class Curve
         //v_list.add(pt_list.get(pt_list.size()-1));
         v_list.add(PVector.add(pt_list.get(pt_list.size()-1), norm));
       }
+      pre_direction = norm;
     }
     
     //now, we have all the v for the mesh
-    for(int i=0;i<v_list.size()-3;i=i+2)
+    for(int i=0;i<v_list.size()-2;i=i+2)
     {
       PVector left = v_list.get(i);
       PVector right = v_list.get(i+1);
       PVector left_next = v_list.get(i+2);
       PVector right_next = v_list.get(i+3);
       //front
-      f_list.add(left);
-      f_list.add(right);
-      f_list.add(right_next);
+      //f_list.add(left);
+      //f_list.add(right);
+      //f_list.add(right_next);
       
-      f_list.add(left);
-      f_list.add(right_next);
-      f_list.add(left_next);
+      //f_list.add(left);
+      //f_list.add(right_next);
+      //f_list.add(left_next);
       //back
       f_list.add(left);
       f_list.add(right_next);
@@ -115,14 +145,26 @@ class Curve
       f_list.add(left);
       f_list.add(left_next);
       f_list.add(right_next);
+      
+      
     }
   }
   
   void draw_mesh()
   {
-    for(int i=0;i<f_list.size()-2;i++)
+    noStroke();
+    for(int i=0;i<f_list.size();i=i+3)
     {
-      fill(colors.x, colors.y, colors.z);
+      if(color_list.size()==0)
+        fill(colors.x, colors.y, colors.z);
+      else
+      {
+        if(i%2==0)
+        {
+          int color_idx = int(float(i)/float(f_list.size()-2)*(color_list.size()));
+          fill(color_list.get(color_idx).x, color_list.get(color_idx).y, color_list.get(color_idx).z);
+        }
+      }
       beginShape();
       vertex(f_list.get(i).x, f_list.get(i).y, f_list.get(i).z);
       vertex(f_list.get(i+1).x, f_list.get(i+1).y, f_list.get(i+1).z);

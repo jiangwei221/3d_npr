@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     std::cout << "initializing sampler" << std::endl;
     Sampler sampler = Sampler(argv[1], normal_flag, flip, false);
     std::cout << "loading texture" << std::endl;
-    Image texture = readPPM("../models/bunny.ppm");
+    Image texture = readPPM("../models/win.ppm");
     std::cout << "w: " <<  texture.w << ", h: " << texture.h << std::endl;
     std::cout << "sampling point cloud" << std::endl;
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     pcl::io::savePCDFileASCII(argv[2], out_cloud);
     std::cerr << "saved " << out_cloud.points.size() << " data points to " << argv[2] << "." << std::endl;
 
-    /*
+    
     Selector test_selector = Selector();
     Fitter test_fitter = Fitter();
     // std::vector<dvec3> pts = test_selector.copyPoints(out_cloud);
@@ -66,8 +66,9 @@ int main(int argc, char **argv)
     // {
     //     std::cout<<to_string(pts[i])<<" ";
     // }
-    std::vector<std::vector<dvec3>> lines = test_selector.selectPoints(out_cloud, 0);
-    
+    std::vector<std::vector<dvec3>> color_list;
+    std::vector<std::vector<dvec3>> lines = test_selector.selectPoints(out_cloud, color_list, 0);
+    // std::cout<<color_list.size()<<std::endl;
     // for(int i=0;i<lines[1].size();i++)
     // {
     //     std::cout<<to_string(lines[1][i]);
@@ -106,8 +107,9 @@ int main(int argc, char **argv)
     }
 
     Writer test_writer = Writer();
-    test_writer.writeBezierToCSV("../output/test.txt", result);
-    */
+    test_writer.write_bezier_to_csv("../output/test.txt", result);
+    test_writer.write_bezier_to_csv("../output/test_color.txt", color_list);
+    
     return 0;
 }
 

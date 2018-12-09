@@ -18,7 +18,7 @@ class Writer
         ;
     }
 
-    void writeBezierToCSV(const char *path, const std::vector<std::vector<dvec3>> &control_pts)
+    void write_bezier_to_csv(const char *path, const std::vector<std::vector<dvec3>> &control_pts)
     {
         std::ofstream myfile (path);
         if (myfile.is_open())
