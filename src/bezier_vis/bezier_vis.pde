@@ -33,9 +33,9 @@ void setup()
     if(data.length>0)
       curves.add(new Curve(data, in_colors));
   }
-  s = loadShape("monkey_v.obj");
-  s.scale(99);
-  s.setFill(color(100, 100, 120, 50));
+  s = loadShape("bunny.obj");
+  s.scale(499);
+  s.setFill(color(100, 100, 120, 150));
 }
 
 void draw()
@@ -49,12 +49,12 @@ void draw()
   {
     //curves.get(i).draw();
     //curves.get(i).draw();
-    curves.get(i).draw_mesh();
+    //curves.get(i).draw_mesh();
   }
   pushMatrix();
   
   //noFill();
   
-  //shape(s, 0, 0);
+  shape(s, 0, 0);
   popMatrix();
 }

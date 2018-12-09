@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     std::cout << "initializing sampler" << std::endl;
     Sampler sampler = Sampler(argv[1], normal_flag, flip, false);
     std::cout << "loading texture" << std::endl;
-    Image texture = readPPM("../models/win.ppm");
+    Image texture = readPPM("../models/bunny.ppm");
     std::cout << "w: " <<  texture.w << ", h: " << texture.h << std::endl;
     std::cout << "sampling point cloud" << std::endl;
 
